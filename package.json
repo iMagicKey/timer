@@ -1,0 +1,32 @@
+{
+    "name": "imagic-timer",
+    "version": "1.0.0",
+    "description": "A minimalist and robust timer management library for JavaScript. Provides safe creation, pausing, resuming, and clearing of intervals and timeouts with automatic unique ID generation and error handling.",
+    "main": "src/index.js",
+    "type": "module",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/iMagicKey/timer.git"
+    },
+    "keywords": [
+        "timer",
+        "timermanager",
+        "imagic",
+        "interval",
+        "timeout",
+        "error-handling",
+        "minimalist"
+    ],
+    "author": "iMagicKey",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/iMagicKey/timer/issues"
+    },
+    "homepage": "https://github.com/iMagicKey/timer#readme",
+    "engines": {
+        "node": ">=20"
+    }
+}
