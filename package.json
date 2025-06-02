@@ -1,6 +1,6 @@
 {
     "name": "imagic-timer",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A minimalist and robust timer management library for JavaScript. Provides safe creation, pausing, resuming, and clearing of intervals and timeouts with automatic unique ID generation and error handling.",
     "main": "src/index.js",
     "type": "module",
