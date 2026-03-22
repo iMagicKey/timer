@@ -134,6 +134,26 @@ describe('TimerManager', () => {
         })
     })
 
+    describe('createTimeout — self-cleanup', () => {
+        it('removes timeout entry from map after callback fires', async () => {
+            const t = new TimerManager()
+            const id = t.createTimeout({ callback: () => {}, timeout: 20 })
+            expect(t.timeouts[id]).to.exist
+            await new Promise((r) => setTimeout(r, 40))
+            expect(t.timeouts[id]).to.be.undefined
+        })
+
+        it('map is empty after multiple timeouts fire', async () => {
+            const t = new TimerManager()
+            const id1 = t.createTimeout({ callback: () => {}, timeout: 10 })
+            const id2 = t.createTimeout({ callback: () => {}, timeout: 15 })
+            await new Promise((r) => setTimeout(r, 40))
+            expect(t.timeouts[id1]).to.be.undefined
+            expect(t.timeouts[id2]).to.be.undefined
+            expect(Object.keys(t.timeouts)).to.have.length(0)
+        })
+    })
+
     describe('clearTimeout', () => {
         it('prevents callback from running', async () => {
             const t = new TimerManager()

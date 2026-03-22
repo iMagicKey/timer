@@ -98,7 +98,11 @@ export default class TimerManager {
         }
 
         if (!this.timeouts[timerId]) {
-            this.timeouts[timerId] = setTimeout(this._safeCallback(callback, timerId, onError, 'timeout'), timeout)
+            const wrappedCallback = () => {
+                delete this.timeouts[timerId]
+                this._safeCallback(callback, timerId, onError, 'timeout')()
+            }
+            this.timeouts[timerId] = setTimeout(wrappedCallback, timeout)
         }
         return timerId
     }
