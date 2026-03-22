@@ -20,6 +20,7 @@ export default class TimerManager {
         this.timeouts = {}
         this.intervals = {}
         this.pausedIntervals = {}
+        this._intervalMeta = {}
 
         if (typeof onError === 'function') {
             this.globalOnError = onError
@@ -30,7 +31,7 @@ export default class TimerManager {
         }
     }
 
-    _safeCallback(callback, timerId, onError) {
+    _safeCallback(callback, timerId, onError, type = 'interval') {
         return () => {
             try {
                 callback()
@@ -40,8 +41,11 @@ export default class TimerManager {
                 } else {
                     this.globalOnError(error, timerId)
                 }
-                this.clearInterval(timerId)
-                this.clearTimeout(timerId)
+                if (type === 'interval') {
+                    this.clearInterval(timerId)
+                } else {
+                    this.clearTimeout(timerId)
+                }
             }
         }
     }
@@ -67,7 +71,8 @@ export default class TimerManager {
         }
 
         if (!this.intervals[timerId]) {
-            this.intervals[timerId] = setInterval(this._safeCallback(callback, timerId, onError), interval)
+            this._intervalMeta[timerId] = { callback, interval, onError }
+            this.intervals[timerId] = setInterval(this._safeCallback(callback, timerId, onError, 'interval'), interval)
         }
         return timerId
     }
@@ -93,7 +98,7 @@ export default class TimerManager {
         }
 
         if (!this.timeouts[timerId]) {
-            this.timeouts[timerId] = setTimeout(this._safeCallback(callback, timerId, onError), timeout)
+            this.timeouts[timerId] = setTimeout(this._safeCallback(callback, timerId, onError, 'timeout'), timeout)
         }
         return timerId
     }
@@ -105,6 +110,9 @@ export default class TimerManager {
         }
         if (this.pausedIntervals[id]) {
             delete this.pausedIntervals[id]
+        }
+        if (this._intervalMeta[id]) {
+            delete this._intervalMeta[id]
         }
     }
 
@@ -118,25 +126,30 @@ export default class TimerManager {
     pauseInterval(id) {
         if (this.intervals[id]) {
             clearInterval(this.intervals[id])
-            this.pausedIntervals[id] = true
+            this.pausedIntervals[id] = this._intervalMeta[id] ? { ...this._intervalMeta[id] } : {}
             delete this.intervals[id]
         }
     }
 
+    /**
+     * Resume a previously paused interval.
+     * @param {string} id - The timer ID to resume.
+     * @param {function} [callback] - Override callback (optional; uses stored callback if omitted).
+     * @param {number} [interval] - Override interval ms (optional; uses stored interval if omitted).
+     */
     resumeInterval(id, callback, interval) {
         if (this.pausedIntervals[id]) {
-            this.createInterval({ id, callback, interval, refresh: false })
+            const meta = this.pausedIntervals[id]
+            const resolvedCallback = callback || meta.callback
+            const resolvedInterval = interval !== undefined ? interval : meta.interval
+            const resolvedOnError = meta.onError
             delete this.pausedIntervals[id]
+            this.createInterval({ id, callback: resolvedCallback, interval: resolvedInterval, onError: resolvedOnError, refresh: false })
         }
     }
 
     clearAll() {
-        Object.keys(this.intervals).forEach((id) => {
-            this.clearInterval(id)
-        })
-
-        Object.keys(this.timeouts).forEach((id) => {
-            this.clearTimeout(id)
-        })
+        Object.keys(this.intervals).forEach((id) => this.clearInterval(id))
+        Object.keys(this.timeouts).forEach((id) => this.clearTimeout(id))
     }
 }

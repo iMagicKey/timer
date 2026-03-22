@@ -1,136 +1,206 @@
 # imagic-timer
 
-A minimalist and robust timer management library for JavaScript.
+> Manage named intervals and timeouts with pause/resume, error isolation, and automatic cleanup.
 
-Provides safe creation, pausing, resuming, and clearing of intervals and timeouts with automatic unique ID generation and error handling.
-
----
-
-## Features
-
--   Create and manage multiple intervals and timeouts by unique IDs
-
--   Automatic unique ID generation if not specified
-
--   Pause and resume intervals
-
--   Global and per-timer error handling
-
--   Safe callbacks with error catching to prevent crashes
-
--   Simple and clean API
-
----
-
-## Installation
+## Install
 
 ```bash
-
 npm install imagic-timer
-
 ```
 
----
-
-## Usage
-
-## Creating a TimerManager instance
+## Quick Start
 
 ```js
-import TimerManager from 'imagic-timer' // or from your local path
+import TimerManager from 'imagic-timer'
 
-const timerManager = new TimerManager({
-    id: 'mainTimers', // optional instance ID for logging
+const timers = new TimerManager({
+    id: 'app',
+    onError: (error, timerId) => console.error(`Timer "${timerId}" failed:`, error.message),
+})
 
-    onError: (error, id) => {
-        console.error(`Error in timer \${id}:`, error)
-    },
+timers.createInterval({
+    id: 'heartbeat',
+    interval: 5000,
+    callback: () => console.log('ping'),
+})
+
+// Pause and resume without losing configuration
+timers.pauseInterval('heartbeat')
+timers.resumeInterval('heartbeat')
+
+// Shutdown
+timers.clearAll()
+```
+
+## API
+
+### `new TimerManager(options?)`
+
+Creates a timer manager instance.
+
+```ts
+new TimerManager(options?: {
+    id?: string
+    onError?: (error: Error, timerId: string) => void
 })
 ```
 
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `id` | `string` | auto-generated 8-char alphanumeric | Instance identifier |
+| `onError` | `(error, timerId) => void` | — | Global error handler, called when any callback throws |
+
+**Properties available after construction:**
+
+| Property | Type | Description |
+|---|---|---|
+| `.id` | `string` | Instance identifier |
+| `.timeouts` | `Record<string, Timeout>` | Active timeout handles keyed by timer ID |
+| `.intervals` | `Record<string, Timeout>` | Active interval handles keyed by timer ID |
+| `.pausedIntervals` | `Record<string, object>` | Saved metadata for paused intervals |
+
 ---
 
-## Creating and managing intervals
+### `createInterval(options): string`
+
+Creates a named repeating interval. Returns the `timerId`.
+
+```ts
+createInterval(options: {
+    id?: string
+    callback: () => void
+    interval: number
+    refresh?: boolean
+    onError?: (error: Error, timerId: string) => void
+}): string
+```
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `id` | `string` | auto-generated | Timer identifier |
+| `callback` | `() => void` | required | Function called on each tick |
+| `interval` | `number` | required | Tick period in milliseconds |
+| `refresh` | `boolean` | `true` | If `true` and the ID already exists, clear the old interval before creating a new one. If `false` and the ID exists, do nothing and return the existing ID |
+| `onError` | `(error, timerId) => void` | — | Per-timer error handler; overrides the global `onError` |
+
+Throws `Error` if `callback` is not a function.
+
+When the callback throws at runtime, the error handler is invoked and the interval is **automatically cleared**.
+
+---
+
+### `createTimeout(options): string`
+
+Creates a named one-shot timeout. Returns the `timerId`.
+
+```ts
+createTimeout(options: {
+    id?: string
+    callback: () => void
+    timeout: number
+    refresh?: boolean
+    onError?: (error: Error, timerId: string) => void
+}): string
+```
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `id` | `string` | auto-generated | Timer identifier |
+| `callback` | `() => void` | required | Function called after the delay |
+| `timeout` | `number` | required | Delay in milliseconds |
+| `refresh` | `boolean` | `true` | If `true` and the ID exists, clear the old timeout before creating a new one |
+| `onError` | `(error, timerId) => void` | — | Per-timer error handler |
+
+Throws `Error` if `callback` is not a function.
+
+When the callback throws, the error handler is invoked. Timeouts self-destruct after firing — no manual cleanup is required.
+
+---
+
+### `clearInterval(id): void`
+
+Clears an active interval and removes all associated metadata (including any saved pause state).
+
+```ts
+clearInterval(id: string): void
+```
+
+---
+
+### `clearTimeout(id): void`
+
+Clears an active timeout and removes it from internal state.
+
+```ts
+clearTimeout(id: string): void
+```
+
+---
+
+### `pauseInterval(id): void`
+
+Stops an interval tick without discarding its configuration. The callback, interval duration, and per-timer error handler are saved internally so `resumeInterval()` can restore everything without arguments.
+
+```ts
+pauseInterval(id: string): void
+```
+
+---
+
+### `resumeInterval(id, callback?, interval?): void`
+
+Restores a previously paused interval. The optional `callback` and `interval` arguments override the saved values; if omitted, the values from the time of pause are used.
+
+```ts
+resumeInterval(
+    id: string,
+    callback?: () => void,
+    interval?: number
+): void
+```
+
+---
+
+### `clearAll(): void`
+
+Clears every active interval and timeout managed by this instance.
+
+```ts
+clearAll(): void
+```
+
+## Error Handling
+
+Errors inside callbacks are caught and routed through `_safeCallback`:
+
+1. The per-timer `onError` handler fires if one was provided to `createInterval` / `createTimeout`.
+2. If no per-timer handler exists, the global `onError` from the constructor is called.
+3. If neither handler is set, the error is silently discarded — the process does not crash.
+4. For intervals: the interval is **automatically cleared** after the error. It will not tick again.
+5. For timeouts: no extra action is taken — they fire once and are already gone.
 
 ```js
-const intervalId = timerManager.createInterval({
-    id: 'heartbeat', // optional timer ID; auto-generated if omitted
+const timers = new TimerManager({
+    onError: (error, id) => console.error(`[global] timer "${id}":`, error.message),
+})
 
+// Per-timer handler overrides global for this specific timer:
+timers.createInterval({
+    id: 'db-poll',
+    interval: 2000,
     callback: () => {
-        console.log('Heartbeat interval tick')
+        throw new Error('connection lost')
     },
-
-    interval: 1000, // milliseconds
-
-    refresh: true, // default true; clears existing interval with same ID before creating
-
     onError: (error, id) => {
-        console.error(`Error in heartbeat interval \${id}:`, error)
+        console.warn(`[db-poll] suppressed — will not retry:`, error.message)
+        // interval is already cleared at this point
     },
 })
 ```
 
----
+## Examples
 
-## Creating and managing timeouts
-
-```js
-const timeoutId = timerManager.createTimeout({
-    id: 'timeoutExample',
-
-    callback: () => {
-        console.log('Timeout finished')
-    },
-
-    timeout: 3000,
-
-    refresh: true, // default true; clears existing timeout with same ID before creating
-
-    onError: (error, id) => {
-        console.error(`Error in timeout \${id}:`, error)
-    },
-})
-```
-
----
-
-## Clearing timers
-
-```js
-timerManager.clearInterval('heartbeat')
-
-timerManager.clearTimeout('timeoutExample')
-```
-
----
-
-## Pausing and resuming intervals
-
-```js
-timerManager.pauseInterval('heartbeat')
-
-// Resume later, providing callback and interval again:
-
-timerManager.resumeInterval(
-    'heartbeat',
-
-    () => {
-        console.log('Heartbeat resumed')
-    },
-
-    1000
-)
-```
-
----
-
-## Clearing all timers
-
-```js
-timerManager.clearAll()
-```
-
----
+See [`examples/`](./examples/) for runnable scripts.
 
 ## License
 
