@@ -1,5 +1,3 @@
-/* eslint-disable no-underscore-dangle */
-
 function generateRandomId(length = 8) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     let result = ''
@@ -32,20 +30,27 @@ export default class TimerManager {
     }
 
     _safeCallback(callback, timerId, onError, type = 'interval') {
+        const handleError = (error) => {
+            if (typeof onError === 'function') {
+                onError(error, timerId)
+            } else {
+                this.globalOnError(error, timerId)
+            }
+            if (type === 'interval') {
+                this.clearInterval(timerId)
+            } else {
+                this.clearTimeout(timerId)
+            }
+        }
+
         return () => {
             try {
-                callback()
+                const result = callback()
+                if (result && typeof result.then === 'function') {
+                    result.catch(handleError)
+                }
             } catch (error) {
-                if (typeof onError === 'function') {
-                    onError(error, timerId)
-                } else {
-                    this.globalOnError(error, timerId)
-                }
-                if (type === 'interval') {
-                    this.clearInterval(timerId)
-                } else {
-                    this.clearTimeout(timerId)
-                }
+                handleError(error)
             }
         }
     }

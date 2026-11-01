@@ -175,3 +175,14 @@ process.on('SIGTERM', () => {
 - **Auto-generated IDs are not predictable.** Store the returned string if you need to reference the timer later.
 - **`clearAll` does not destroy the instance.** The instance is reusable after `clearAll`.
 - **No persistence.** All state is in memory. Restarting the process loses all timer state.
+
+---
+
+## Knowledge Base
+
+**KB tags for this library:** `imagic-timer, performance`
+
+Before COMPLEX tasks — invoke `knowledge-reader` with tags above + task-specific tags.
+After completing a task — if a reusable pattern, error, or decision emerged, invoke `knowledge-writer` with `source: imagic-timer`.
+
+See `CLAUDE.md` §Knowledge Base Protocol for the full workflow.
