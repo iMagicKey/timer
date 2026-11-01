@@ -1,3 +1,5 @@
+> **DEPRECATED — NO LONGER MAINTAINED.** This project is discontinued, so the items below will not be carried out. They are kept for reference only.
+
 # UPDATE — imagic-timer
 
 > Аудит проведён: 2026-03-22. Версия на момент аудита: 1.0.1

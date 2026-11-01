@@ -1,3 +1,12 @@
+> [!CAUTION]
+> **DEPRECATED — NO LONGER MAINTAINED**
+>
+> `imagic-timer` is no longer actively developed or supported, and no further updates are planned. Existing published npm versions remain available for compatibility, but should not be used for new projects.
+>
+> **Recommended direction:** native Node.js [timers](https://nodejs.org/api/timers.html) with application-level cleanup. These alternatives are not drop-in API replacements, so migrating requires code changes.
+>
+> Unreleased changes are kept for reference on the [`stabilization/timer-20261101`](https://github.com/iMagicKey/timer/tree/stabilization/timer-20261101) branch. They are not in any published npm version.
+
 # imagic-timer
 
 > Manage named intervals and timeouts with pause/resume, error isolation, and automatic cleanup.
