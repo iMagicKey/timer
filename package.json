@@ -1,6 +1,6 @@
 {
     "name": "imagic-timer",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "description": "Create, pause, resume, and clear named intervals and timeouts with automatic ID management",
     "type": "module",
     "exports": {
@@ -15,8 +15,9 @@
     "sideEffects": false,
     "scripts": {
         "test": "node --test ./tests/**/*.test.js",
-        "lint": "eslint src",
-        "lint:fix": "eslint src --fix"
+        "lint": "eslint src tests",
+        "lint:fix": "eslint src tests --fix",
+        "prettier": "npx prettier --write ."
     },
     "repository": {
         "type": "git",
@@ -41,15 +42,14 @@
         "node": ">=24"
     },
     "devDependencies": {
-        "@eslint/js": "latest",
+        "@eslint/js": "^9.24.0",
         "chai": "latest",
-        "eslint": "latest",
-        "eslint-config-prettier": "latest",
-        "eslint-plugin-import": "latest",
-        "eslint-plugin-n": "latest",
-        "eslint-plugin-prettier": "latest",
-        "eslint-plugin-promise": "latest",
-        "globals": "latest",
-        "prettier": "latest"
+        "eslint": "^9.24.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-import": "^2.32.0",
+        "eslint-plugin-n": "^17.24.0",
+        "eslint-plugin-promise": "^7.2.1",
+        "globals": "^16.0.0",
+        "prettier": "^3.8.1"
     }
 }

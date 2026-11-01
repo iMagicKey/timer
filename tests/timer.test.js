@@ -22,9 +22,18 @@ describe('TimerManager', () => {
         })
         it('accepts custom onError handler', async () => {
             let caught = null
-            const t = new TimerManager({ onError: (err) => { caught = err } })
-            t.createTimeout({ callback: () => { throw new Error('x') }, timeout: 10 })
-            await new Promise((r) => setTimeout(r, 30))
+            const t = new TimerManager({
+                onError: (err) => {
+                    caught = err
+                },
+            })
+            t.createTimeout({
+                callback: () => {
+                    throw new Error('x')
+                },
+                timeout: 10,
+            })
+            await new Promise((resolve) => setTimeout(resolve, 30))
             expect(caught).to.be.instanceOf(Error)
             expect(caught.message).to.equal('x')
         })
@@ -47,7 +56,7 @@ describe('TimerManager', () => {
             const t = new TimerManager()
             let count = 0
             const id = t.createInterval({ callback: () => count++, interval: 10 })
-            await new Promise((r) => setTimeout(r, 35))
+            await new Promise((resolve) => setTimeout(resolve, 35))
             t.clearInterval(id)
             expect(count).to.be.greaterThanOrEqual(2)
         })
@@ -61,7 +70,7 @@ describe('TimerManager', () => {
             const id = t.createInterval({ id: 'test', callback: () => count++, interval: 100 })
             const id2 = t.createInterval({ id: 'test', callback: () => (count += 10), interval: 10, refresh: true })
             expect(id).to.equal(id2)
-            await new Promise((r) => setTimeout(r, 25))
+            await new Promise((resolve) => setTimeout(resolve, 25))
             t.clearInterval(id)
             expect(count).to.be.greaterThanOrEqual(10)
         })
@@ -70,20 +79,28 @@ describe('TimerManager', () => {
             let count = 0
             t.createInterval({ id: 'noref', callback: () => count++, interval: 10 })
             t.createInterval({ id: 'noref', callback: () => (count += 100), interval: 10, refresh: false })
-            await new Promise((r) => setTimeout(r, 25))
+            await new Promise((resolve) => setTimeout(resolve, 25))
             t.clearInterval('noref')
             expect(count).to.be.lessThan(100)
         })
         it('per-timer onError overrides globalOnError', async () => {
             let globalCalled = false
             let localCalled = false
-            const t = new TimerManager({ onError: () => { globalCalled = true } })
-            t.createTimeout({
-                callback: () => { throw new Error('local') },
-                timeout: 10,
-                onError: () => { localCalled = true },
+            const t = new TimerManager({
+                onError: () => {
+                    globalCalled = true
+                },
             })
-            await new Promise((r) => setTimeout(r, 30))
+            t.createTimeout({
+                callback: () => {
+                    throw new Error('local')
+                },
+                timeout: 10,
+                onError: () => {
+                    localCalled = true
+                },
+            })
+            await new Promise((resolve) => setTimeout(resolve, 30))
             expect(localCalled).to.be.true
             expect(globalCalled).to.be.false
         })
@@ -98,7 +115,7 @@ describe('TimerManager', () => {
                 },
                 interval: 10,
             })
-            await new Promise((r) => setTimeout(r, 50))
+            await new Promise((resolve) => setTimeout(resolve, 50))
             expect(t.intervals[id]).to.be.undefined
             expect(count).to.equal(1)
         })
@@ -108,8 +125,13 @@ describe('TimerManager', () => {
         it('runs callback after timeout', async () => {
             const t = new TimerManager()
             let ran = false
-            t.createTimeout({ callback: () => { ran = true }, timeout: 20 })
-            await new Promise((r) => setTimeout(r, 40))
+            t.createTimeout({
+                callback: () => {
+                    ran = true
+                },
+                timeout: 20,
+            })
+            await new Promise((resolve) => setTimeout(resolve, 40))
             expect(ran).to.be.true
         })
         it('throws if callback is not a function', () => {
@@ -126,9 +148,22 @@ describe('TimerManager', () => {
             const t = new TimerManager()
             let ran1 = false
             let ran2 = false
-            t.createTimeout({ id: 'to', callback: () => { ran1 = true }, timeout: 100 })
-            t.createTimeout({ id: 'to', callback: () => { ran2 = true }, timeout: 20, refresh: true })
-            await new Promise((r) => setTimeout(r, 40))
+            t.createTimeout({
+                id: 'to',
+                callback: () => {
+                    ran1 = true
+                },
+                timeout: 100,
+            })
+            t.createTimeout({
+                id: 'to',
+                callback: () => {
+                    ran2 = true
+                },
+                timeout: 20,
+                refresh: true,
+            })
+            await new Promise((resolve) => setTimeout(resolve, 40))
             expect(ran1).to.be.false
             expect(ran2).to.be.true
         })
@@ -139,7 +174,7 @@ describe('TimerManager', () => {
             const t = new TimerManager()
             const id = t.createTimeout({ callback: () => {}, timeout: 20 })
             expect(t.timeouts[id]).to.exist
-            await new Promise((r) => setTimeout(r, 40))
+            await new Promise((resolve) => setTimeout(resolve, 40))
             expect(t.timeouts[id]).to.be.undefined
         })
 
@@ -147,7 +182,7 @@ describe('TimerManager', () => {
             const t = new TimerManager()
             const id1 = t.createTimeout({ callback: () => {}, timeout: 10 })
             const id2 = t.createTimeout({ callback: () => {}, timeout: 15 })
-            await new Promise((r) => setTimeout(r, 40))
+            await new Promise((resolve) => setTimeout(resolve, 40))
             expect(t.timeouts[id1]).to.be.undefined
             expect(t.timeouts[id2]).to.be.undefined
             expect(Object.keys(t.timeouts)).to.have.length(0)
@@ -158,9 +193,14 @@ describe('TimerManager', () => {
         it('prevents callback from running', async () => {
             const t = new TimerManager()
             let ran = false
-            const id = t.createTimeout({ callback: () => { ran = true }, timeout: 30 })
+            const id = t.createTimeout({
+                callback: () => {
+                    ran = true
+                },
+                timeout: 30,
+            })
             t.clearTimeout(id)
-            await new Promise((r) => setTimeout(r, 50))
+            await new Promise((resolve) => setTimeout(resolve, 50))
             expect(ran).to.be.false
         })
         it('no-ops on unknown id', () => {
@@ -174,10 +214,10 @@ describe('TimerManager', () => {
             const t = new TimerManager()
             let count = 0
             const id = t.createInterval({ callback: () => count++, interval: 10 })
-            await new Promise((r) => setTimeout(r, 25))
+            await new Promise((resolve) => setTimeout(resolve, 25))
             t.clearInterval(id)
             const countAtClear = count
-            await new Promise((r) => setTimeout(r, 25))
+            await new Promise((resolve) => setTimeout(resolve, 25))
             expect(count).to.equal(countAtClear)
         })
         it('no-ops on unknown id', () => {
@@ -191,13 +231,13 @@ describe('TimerManager', () => {
             const t = new TimerManager()
             let count = 0
             const id = t.createInterval({ id: 'resumeTest', callback: () => count++, interval: 10 })
-            await new Promise((r) => setTimeout(r, 25))
+            await new Promise((resolve) => setTimeout(resolve, 25))
             t.pauseInterval(id)
             const countAtPause = count
-            await new Promise((r) => setTimeout(r, 30))
+            await new Promise((resolve) => setTimeout(resolve, 30))
             expect(count).to.equal(countAtPause)
             t.resumeInterval(id)
-            await new Promise((r) => setTimeout(r, 25))
+            await new Promise((resolve) => setTimeout(resolve, 25))
             t.clearInterval(id)
             expect(count).to.be.greaterThan(countAtPause)
         })
@@ -206,10 +246,10 @@ describe('TimerManager', () => {
             let originalRan = 0
             let overrideRan = 0
             const id = t.createInterval({ id: 'ovr', callback: () => originalRan++, interval: 10 })
-            await new Promise((r) => setTimeout(r, 15))
+            await new Promise((resolve) => setTimeout(resolve, 15))
             t.pauseInterval(id)
             t.resumeInterval(id, () => overrideRan++)
-            await new Promise((r) => setTimeout(r, 25))
+            await new Promise((resolve) => setTimeout(resolve, 25))
             t.clearInterval(id)
             expect(overrideRan).to.be.greaterThanOrEqual(1)
         })
@@ -219,7 +259,7 @@ describe('TimerManager', () => {
             const id = t.createInterval({ id: 'ivl', callback: () => count++, interval: 500 })
             t.pauseInterval(id)
             t.resumeInterval(id, undefined, 10)
-            await new Promise((r) => setTimeout(r, 35))
+            await new Promise((resolve) => setTimeout(resolve, 35))
             t.clearInterval(id)
             expect(count).to.be.greaterThanOrEqual(2)
         })
@@ -253,9 +293,15 @@ describe('TimerManager', () => {
             let timeoutRan = false
             t.createInterval({ id: 'i1', callback: () => intervalRan++, interval: 10 })
             t.createInterval({ id: 'i2', callback: () => intervalRan++, interval: 10 })
-            t.createTimeout({ id: 't1', callback: () => { timeoutRan = true }, timeout: 50 })
+            t.createTimeout({
+                id: 't1',
+                callback: () => {
+                    timeoutRan = true
+                },
+                timeout: 50,
+            })
             t.clearAll()
-            await new Promise((r) => setTimeout(r, 70))
+            await new Promise((resolve) => setTimeout(resolve, 70))
             expect(intervalRan).to.equal(0)
             expect(timeoutRan).to.be.false
         })
@@ -269,20 +315,114 @@ describe('TimerManager', () => {
         })
     })
 
+    describe('async callback error handling', () => {
+        it('catches rejected Promise from async interval callback', async () => {
+            let caught = null
+            const t = new TimerManager({
+                onError: (err) => {
+                    caught = err
+                },
+            })
+            t.createInterval({
+                id: 'asyncErr',
+                callback: async () => {
+                    throw new Error('async interval fail')
+                },
+                interval: 10,
+            })
+            await new Promise((resolve) => setTimeout(resolve, 50))
+            expect(caught).to.be.instanceOf(Error)
+            expect(caught.message).to.equal('async interval fail')
+        })
+
+        it('auto-clears interval after async callback rejects', async () => {
+            const t = new TimerManager({ onError: () => {} })
+            let count = 0
+            const id = t.createInterval({
+                id: 'asyncClr',
+                callback: async () => {
+                    count++
+                    throw new Error('fail')
+                },
+                interval: 10,
+            })
+            await new Promise((resolve) => setTimeout(resolve, 50))
+            expect(t.intervals[id]).to.be.undefined
+            expect(count).to.equal(1)
+        })
+
+        it('catches rejected Promise from async timeout callback', async () => {
+            let caught = null
+            const t = new TimerManager({
+                onError: (err) => {
+                    caught = err
+                },
+            })
+            t.createTimeout({
+                callback: async () => {
+                    throw new Error('async timeout fail')
+                },
+                timeout: 10,
+            })
+            await new Promise((resolve) => setTimeout(resolve, 50))
+            expect(caught).to.be.instanceOf(Error)
+            expect(caught.message).to.equal('async timeout fail')
+        })
+
+        it('async callback that resolves does not trigger onError', async () => {
+            let errorCalled = false
+            const t = new TimerManager({
+                onError: () => {
+                    errorCalled = true
+                },
+            })
+            let count = 0
+            const id = t.createInterval({
+                callback: async () => {
+                    count++
+                },
+                interval: 10,
+            })
+            await new Promise((resolve) => setTimeout(resolve, 35))
+            t.clearInterval(id)
+            expect(errorCalled).to.be.false
+            expect(count).to.be.greaterThanOrEqual(2)
+        })
+    })
+
     describe('error handling', () => {
         it('globalOnError called with error and timerId for interval', async () => {
             let caught = { err: null, id: null }
-            const t = new TimerManager({ onError: (err, id) => { caught = { err, id } } })
-            t.createInterval({ id: 'errId', callback: () => { throw new Error('interval fail') }, interval: 10 })
-            await new Promise((r) => setTimeout(r, 30))
+            const t = new TimerManager({
+                onError: (err, id) => {
+                    caught = { err, id }
+                },
+            })
+            t.createInterval({
+                id: 'errId',
+                callback: () => {
+                    throw new Error('interval fail')
+                },
+                interval: 10,
+            })
+            await new Promise((resolve) => setTimeout(resolve, 30))
             expect(caught.err).to.be.instanceOf(Error)
             expect(caught.id).to.equal('errId')
         })
         it('globalOnError called for timeout', async () => {
             let errorCaught = null
-            const t = new TimerManager({ onError: (err) => { errorCaught = err } })
-            t.createTimeout({ callback: () => { throw new Error('test error') }, timeout: 10 })
-            await new Promise((r) => setTimeout(r, 30))
+            const t = new TimerManager({
+                onError: (err) => {
+                    errorCaught = err
+                },
+            })
+            t.createTimeout({
+                callback: () => {
+                    throw new Error('test error')
+                },
+                timeout: 10,
+            })
+            await new Promise((resolve) => setTimeout(resolve, 30))
             expect(errorCaught).to.be.instanceOf(Error)
         })
         it('interval auto-cleared after throw, runs exactly once', async () => {
@@ -296,7 +436,7 @@ describe('TimerManager', () => {
                 },
                 interval: 10,
             })
-            await new Promise((r) => setTimeout(r, 50))
+            await new Promise((resolve) => setTimeout(resolve, 50))
             expect(t.intervals[id]).to.be.undefined
             expect(count).to.equal(1)
         })
